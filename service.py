@@ -3,6 +3,7 @@ from llm import ask_llm
 from models import Document
 from schemas import QuestionRequest
 import pdf_handler as pdh
+from text_utils import chunk_text
 
 def query_response(qst:QuestionRequest,docs: Document):
     llm_response = ask_llm(build_prompt(docs.content,qst.question))
@@ -11,3 +12,6 @@ def query_response(qst:QuestionRequest,docs: Document):
 
 def get_pdf_text(file):
     return pdh.read_pdf(file)
+
+def get_chunks(text):
+    return chunk_text(text)

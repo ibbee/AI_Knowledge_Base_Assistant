@@ -1,9 +1,9 @@
 from fastapi import FastAPI,Depends,HTTPException, UploadFile, File
 from database import create_tables,get_db
 from sqlalchemy.orm import Session
-from models import Document
+from models import Document,DocumentChunk
 from schemas import QuestionRequest
-from service import get_pdf_text,query_response
+from service import get_pdf_text,query_response,get_chunks
 
 app = FastAPI()
 
@@ -36,9 +36,16 @@ def insert_documents(file: UploadFile =File(...),db:Session=Depends(get_db)):
             detail="Invalid file format, only PDF is allowed."
         )
     try:
+        doc_text = get_pdf_text(file)
         new_doc = Document(
             file_name = file.filename,
-            content = get_pdf_text(file)
+            content = doc_text,
+            document_chunks = [
+                DocumentChunk(
+                    chunk_text = chunk
+                )
+                for chunk in get_chunks(doc_text)
+            ]
         )
         db.add(new_doc)
         db.commit()
@@ -46,7 +53,8 @@ def insert_documents(file: UploadFile =File(...),db:Session=Depends(get_db)):
         return {
             "id":new_doc.id,
             "file_name":new_doc.file_name,
-            "characters": len(new_doc.content)
+            "characters": len(new_doc.content),
+            "no_of_chunks": len(new_doc.document_chunks)
         }
     except Exception as e:
         raise HTTPException(
