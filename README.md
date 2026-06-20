@@ -88,7 +88,7 @@ AI_Knowledge_Base_Assistant/
 Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/ibbee/AI_Knowledge_Base_Assistant.git
 cd AI_Knowledge_Base_Assistant
 ```
 
