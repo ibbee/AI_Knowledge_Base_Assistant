@@ -23,6 +23,7 @@ class DocumentChunk(Base):
     id:Mapped[int] = mapped_column(Integer,primary_key=True)
     document_id:Mapped[int] = mapped_column(ForeignKey("documents.id"))
     chunk_text:Mapped[str] = mapped_column(Text)
+    vector_id:Mapped[int|None] = mapped_column(Integer,nullable=True)
     document:Mapped["Document"] = relationship(
         back_populates="document_chunks"
     )

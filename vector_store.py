@@ -13,3 +13,12 @@ def create_index(dimensions):
 
 def add_embeddings(index, embeddings):
     index.add(np.asarray(embeddings,dtype=np.float32))
+
+def save_index(index):
+    faiss.write_index(index,"vector_store/document_index.faiss")
+
+def load_index(path):
+    try:
+        return faiss.read_index(path)
+    except:
+        return None

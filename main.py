@@ -3,7 +3,8 @@ from database import create_tables,get_db
 from sqlalchemy.orm import Session
 from models import Document,DocumentChunk
 from schemas import QuestionRequest
-from service import get_pdf_text,query_response,get_chunks
+from service import get_pdf_text,query_response,get_chunks,get_embeddings,get_index,store_embeddings,store_index
+from retriever import retrieve_chunks
 
 app = FastAPI()
 
@@ -37,14 +38,21 @@ def insert_documents(file: UploadFile =File(...),db:Session=Depends(get_db)):
         )
     try:
         doc_text = get_pdf_text(file)
+        chunks = get_chunks(doc_text)
+        embeddings = [get_embeddings(i) for i in chunks]
+        index = get_index(len(embeddings[0]),"vector_store/document_index.faiss")
+        vector_index = index.ntotal
+        store_embeddings(index,embeddings)
+        store_index(index)
         new_doc = Document(
             file_name = file.filename,
             content = doc_text,
             document_chunks = [
                 DocumentChunk(
-                    chunk_text = chunk
+                    chunk_text = chunk,
+                    vector_id = vector_index + idx
                 )
-                for chunk in get_chunks(doc_text)
+                for idx,chunk in enumerate(chunks)
             ]
         )
         db.add(new_doc)
@@ -64,20 +72,26 @@ def insert_documents(file: UploadFile =File(...),db:Session=Depends(get_db)):
     
 @app.post("/ask")
 def ask_llm(question:QuestionRequest,db:Session=Depends(get_db)):
-    doc = db.query(Document).filter(
-        Document.id == question.document_id
-    ).first()
-
+    vector_ids = retrieve_chunks(question.question)
+    doc = db.query(DocumentChunk).filter(
+        DocumentChunk.vector_id.in_(vector_ids)
+    ).all()
     if not doc:
         raise HTTPException(
             status_code=404,
-            detail="Document not found"
+            detail="Document or relevant chunks not found"
         )
     
     try:
-        output = query_response(question,doc)
+        context = ''
+        sources = set()
+        for i in doc:
+            context += i.chunk_text + '\n'
+            sources.add(i.document.file_name)
+        output = query_response(question.question,context)
         return {
-            "answer":output
+            "answer":output,
+            "sources":list(sources)
         }
     except Exception as e:
         raise HTTPException(

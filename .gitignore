@@ -20,3 +20,6 @@ __pycache__/
 
 #DBs
 *.db
+
+# FAISS Index
+vector_store/*.faiss

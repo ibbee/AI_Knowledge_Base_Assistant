@@ -5,5 +5,4 @@ class DocumentCreate(BaseModel):
     content: str
 
 class QuestionRequest(BaseModel):
-    document_id: int
     question: str

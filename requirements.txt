@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pypdf
+ollama
+faiss-cpu
+numpy
+python-multipart
